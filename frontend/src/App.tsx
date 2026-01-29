@@ -1,21 +1,11 @@
 import './App.css'
-import { useEffect } from 'react';
-import axios from 'axios';
-
+import { Route, Routes } from 'react-router-dom';
+import Home from './pages/Home';
 function App() {
-  useEffect(() => {
-        axios.get("/api/testing")
-            .then((res) => {
-                console.log("Response from backend:", res.data);
-            })
-            .catch((err) => {
-                console.error("Error:", err);
-            });
-    }, []);
   return (
-    <div>
-      Hello guys!!
-    </div>
+    <Routes>
+      <Route path='/' element={<Home />} />
+    </Routes>
   )
 }
 
