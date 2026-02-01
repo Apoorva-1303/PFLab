@@ -16,17 +16,39 @@
     position: fixed;
     height: 100vh;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.closed {
+    width: 70px;
+}
+
+.sidebar.closed .nav-text {
+    display: none;
+}
+
+.sidebar.closed .sidebar-brand h1 {
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.sidebar.closed .nav-item {
+    justify-content: center;
+    padding: 0.875rem;
 }
 
 .sidebar-brand {
     padding: 2rem 1.5rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
 }
 
 .sidebar-brand h1 {
     font-size: 1.4rem;
     margin: 0;
     font-weight: 700;
+    transition: all 0.3s ease;
 }
 
 .sidebar-nav {
@@ -59,19 +81,29 @@
 
 .nav-icon {
     font-size: 1.25rem;
+    min-width: 1.25rem;
 }
 
 .nav-text {
     font-weight: 500;
     font-size: 0.95rem;
+    transition: opacity 0.3s ease;
 }
 
 /* Main Content Area */
 .main-content {
     flex: 1;
-    margin-left: 260px;
     display: flex;
     flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.main-content.sidebar-open {
+    margin-left: 260px;
+}
+
+.main-content.sidebar-closed {
+    margin-left: 70px;
 }
 
 /* Header Styles */
@@ -86,6 +118,35 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.hamburger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.hamburger-btn:hover {
+    background-color: #f7fafc;
+}
+
+.hamburger-icon {
+    font-size: 1.5rem;
+    color: #4a5568;
+    display: block;
+    line-height: 1;
 }
 
 .page-title {
@@ -105,6 +166,18 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.user-info:hover {
+    background-color: #f7fafc;
+}
+
+.user-info:active {
+    background-color: #edf2f7;
 }
 
 .user-avatar {
@@ -118,6 +191,7 @@
     color: white;
     font-weight: 700;
     font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .user-details {
@@ -162,30 +236,29 @@
 /* Responsive Design */
 @media (max-width: 768px) {
     .sidebar {
-        width: 70px;
+        width: 260px;
+        transform: translateX(-100%);
     }
 
-    .sidebar-brand h1 {
-        font-size: 1.5rem;
-        text-align: center;
+    .sidebar.open {
+        transform: translateX(0);
     }
 
-    .nav-text {
-        display: none;
-    }
-
-    .nav-item {
-        justify-content: center;
-        padding: 0.875rem;
+    .sidebar.closed {
+        transform: translateX(-100%);
     }
 
     .main-content {
-        margin-left: 70px;
+        margin-left: 0 !important;
     }
 
     .header-content {
-        flex-direction: column;
+        flex-wrap: wrap;
         gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
     }
 
     .user-details {

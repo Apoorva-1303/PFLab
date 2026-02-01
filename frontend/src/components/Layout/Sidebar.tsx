@@ -2,9 +2,13 @@
 import { NavLink } from 'react-router-dom';
 import './Layout.css';
 
-const Sidebar = () => {
+interface SidebarProps {
+    isOpen: boolean;
+}
+
+const Sidebar = ({ isOpen }: SidebarProps) => {
     return (
-        <aside className="sidebar">
+        <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
             <div className="sidebar-brand">
                 <h1>🔐 SecureVault</h1>
             </div>
