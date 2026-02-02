@@ -1,42 +1,153 @@
 // Vault List Page Component
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { INITIAL_VAULTS } from '../../mock/mockData';
 import type { Vault } from '../../mock/types';
+import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import './Vaults.css';
 
+const API_URL = 'http://localhost:3000/api';
+
 const VaultList = () => {
-    // TODO: Replace with API call to fetch vaults from backend
-    const [vaults, setVaults] = useState<Vault[]>(INITIAL_VAULTS);
+    const [vaults, setVaults] = useState<Vault[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newVaultName, setNewVaultName] = useState('');
     const [newVaultDescription, setNewVaultDescription] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
 
-    const handleCreateVault = (e: React.FormEvent) => {
-        e.preventDefault();
+    // Confirmation modal state
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        vaultId: string;
+        vaultName: string;
+    }>({ isOpen: false, vaultId: '', vaultName: '' });
 
-        // TODO: Replace with API call to create vault on backend
-        const newVault: Vault = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: newVaultName,
-            description: newVaultDescription,
-            createdAt: new Date().toISOString(),
-            credentialCount: 0,
-            color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-        };
+    // Fetch vaults from API
+    useEffect(() => {
+        console.log('frontend / VaultList / useEffect / Fetching vaults');
+        fetchVaults();
+    }, []);
 
-        setVaults([...vaults, newVault]);
-        setNewVaultName('');
-        setNewVaultDescription('');
-        setShowCreateForm(false);
-    };
+    const fetchVaults = async () => {
+        console.log('frontend / VaultList / fetchVaults / Starting');
+        try {
+            const token = localStorage.getItem('authToken');
+            console.log('frontend / VaultList / fetchVaults / Token:', token ? 'EXISTS' : 'NOT FOUND');
 
-    const handleDeleteVault = (id: string) => {
-        // TODO: Replace with API call to delete vault from backend
-        if (confirm('Are you sure you want to delete this vault?')) {
-            setVaults(vaults.filter(v => v.id !== id));
+            const response = await fetch(`${API_URL}/vaults`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            console.log('frontend / VaultList / fetchVaults / Response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('frontend / VaultList / fetchVaults / Vaults received:', data.vaults.length);
+                setVaults(data.vaults);
+            } else {
+                const data = await response.json();
+                setError(data.message || 'Failed to fetch vaults');
+            }
+        } catch (err) {
+            console.error('frontend / VaultList / fetchVaults / Error:', err);
+            setError('Network error. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
+
+    const handleCreateVault = async (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log('frontend / VaultList / handleCreateVault / Creating vault:', newVaultName);
+        setIsCreating(true);
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/vaults`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: newVaultName,
+                    description: newVaultDescription
+                })
+            });
+
+            console.log('frontend / VaultList / handleCreateVault / Response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('frontend / VaultList / handleCreateVault / Success:', data.vault);
+                setVaults([data.vault, ...vaults]);
+                setNewVaultName('');
+                setNewVaultDescription('');
+                setShowCreateForm(false);
+            } else {
+                const data = await response.json();
+                setError(data.message || 'Failed to create vault');
+            }
+        } catch (err) {
+            console.error('frontend / VaultList / handleCreateVault / Error:', err);
+            setError('Network error. Please try again.');
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    const openDeleteConfirm = (id: string, name: string) => {
+        console.log('frontend / VaultList / openDeleteConfirm / Opening confirmation for:', name);
+        setConfirmModal({ isOpen: true, vaultId: id, vaultName: name });
+    };
+
+    const closeDeleteConfirm = () => {
+        setConfirmModal({ isOpen: false, vaultId: '', vaultName: '' });
+    };
+
+    const handleDeleteVault = async () => {
+        const id = confirmModal.vaultId;
+        console.log('frontend / VaultList / handleDeleteVault / Deleting vault:', id);
+        closeDeleteConfirm();
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/vaults/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            console.log('frontend / VaultList / handleDeleteVault / Response status:', response.status);
+
+            if (response.ok) {
+                console.log('frontend / VaultList / handleDeleteVault / Success');
+                setVaults(vaults.filter(v => String(v.id) !== String(id)));
+            } else if (response.status === 404) {
+                // Vault doesn't exist in database (ghost vault) - remove from UI anyway
+                console.log('frontend / VaultList / handleDeleteVault / Vault not found, removing from UI');
+                setVaults(vaults.filter(v => String(v.id) !== String(id)));
+            } else {
+                const data = await response.json();
+                setError(data.message || 'Failed to delete vault');
+            }
+        } catch (err) {
+            console.error('frontend / VaultList / handleDeleteVault / Error:', err);
+            setError('Network error. Please try again.');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="vaults-page">
+                <div className="loading-state">Loading vaults...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="vaults-page">
@@ -52,6 +163,13 @@ const VaultList = () => {
                     {showCreateForm ? 'Cancel' : '+ Create Vault'}
                 </button>
             </div>
+
+            {error && (
+                <div className="error-message" style={{ marginBottom: '1rem' }}>
+                    {error}
+                    <button onClick={() => setError('')} style={{ marginLeft: '1rem' }}>✕</button>
+                </div>
+            )}
 
             {showCreateForm && (
                 <div className="create-vault-form">
@@ -78,7 +196,9 @@ const VaultList = () => {
                                 rows={3}
                             />
                         </div>
-                        <button type="submit" className="btn-primary">Create Vault</button>
+                        <button type="submit" className="btn-primary" disabled={isCreating}>
+                            {isCreating ? 'Creating...' : 'Create Vault'}
+                        </button>
                     </form>
                 </div>
             )}
@@ -108,7 +228,7 @@ const VaultList = () => {
                                 View Details
                             </Link>
                             <button
-                                onClick={() => handleDeleteVault(vault.id)}
+                                onClick={() => openDeleteConfirm(vault.id, vault.name)}
                                 className="btn-delete"
                             >
                                 Delete
@@ -118,13 +238,25 @@ const VaultList = () => {
                 ))}
             </div>
 
-            {vaults.length === 0 && (
+            {vaults.length === 0 && !loading && (
                 <div className="empty-state">
                     <div className="empty-icon">🗄️</div>
                     <h3>No vaults yet</h3>
                     <p>Create your first vault to start organizing your credentials</p>
                 </div>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title="Delete Vault"
+                message={`Are you sure you want to delete "${confirmModal.vaultName}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleDeleteVault}
+                onCancel={closeDeleteConfirm}
+                variant="danger"
+            />
         </div>
     );
 };

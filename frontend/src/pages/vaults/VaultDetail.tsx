@@ -1,24 +1,92 @@
 // Vault Detail Page Component
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { INITIAL_VAULTS, INITIAL_CREDENTIALS } from '../../mock/mockData';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import type { Vault, Credential } from '../../mock/types';
+import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import './Vaults.css';
+
+const API_URL = 'http://localhost:3000/api';
 
 const VaultDetail = () => {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const [vault, setVault] = useState<Vault | null>(null);
     const [credentials, setCredentials] = useState<Credential[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
-        // TODO: Replace with API call to fetch vault details from backend
-        const foundVault = INITIAL_VAULTS.find(v => v.id === id);
-        setVault(foundVault || null);
-
-        // TODO: Replace with API call to fetch credentials for this vault
-        const vaultCredentials = INITIAL_CREDENTIALS.filter(c => c.vaultId === id);
-        setCredentials(vaultCredentials);
+        console.log('frontend / VaultDetail / useEffect / Fetching vault:', id);
+        fetchVault();
     }, [id]);
+
+    const fetchVault = async () => {
+        console.log('frontend / VaultDetail / fetchVault / Starting');
+        try {
+            const token = localStorage.getItem('authToken');
+
+            const response = await fetch(`${API_URL}/vaults/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            console.log('frontend / VaultDetail / fetchVault / Response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('frontend / VaultDetail / fetchVault / Vault received:', data.vault);
+                setVault(data.vault);
+                // TODO: Fetch credentials when credential API is implemented
+                setCredentials([]);
+            } else if (response.status === 404) {
+                setVault(null);
+            } else {
+                const data = await response.json();
+                setError(data.message || 'Failed to fetch vault');
+            }
+        } catch (err) {
+            console.error('frontend / VaultDetail / fetchVault / Error:', err);
+            setError('Network error. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteVault = async () => {
+        console.log('frontend / VaultDetail / handleDeleteVault / Deleting vault:', id);
+        setShowDeleteConfirm(false);
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/vaults/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok || response.status === 404) {
+                console.log('frontend / VaultDetail / handleDeleteVault / Success');
+                navigate('/vaults');
+            } else {
+                const data = await response.json();
+                setError(data.message || 'Failed to delete vault');
+            }
+        } catch (err) {
+            console.error('frontend / VaultDetail / handleDeleteVault / Error:', err);
+            setError('Network error. Please try again.');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="vault-detail">
+                <div className="loading-state">Loading vault...</div>
+            </div>
+        );
+    }
 
     if (!vault) {
         return (
@@ -39,7 +107,17 @@ const VaultDetail = () => {
                     <h1>{vault.name}</h1>
                     <p>{vault.description}</p>
                 </div>
+                <button onClick={() => setShowDeleteConfirm(true)} className="btn-delete">
+                    Delete Vault
+                </button>
             </div>
+
+            {error && (
+                <div className="error-message" style={{ marginBottom: '1rem' }}>
+                    {error}
+                    <button onClick={() => setError('')} style={{ marginLeft: '1rem' }}>✕</button>
+                </div>
+            )}
 
             <div className="vault-info-card">
                 <div className="info-item">
@@ -91,6 +169,18 @@ const VaultDetail = () => {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="Delete Vault"
+                message={`Are you sure you want to delete "${vault.name}"? This action cannot be undone and will remove all credentials in this vault.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleDeleteVault}
+                onCancel={() => setShowDeleteConfirm(false)}
+                variant="danger"
+            />
         </div>
     );
 };

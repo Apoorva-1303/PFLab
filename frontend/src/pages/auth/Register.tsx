@@ -16,32 +16,41 @@ const Register = () => {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        console.log('frontend / Register / handleSubmit / Form submitted');
+        console.log('frontend / Register / handleSubmit / Name:', name);
+        console.log('frontend / Register / handleSubmit / Email:', email);
         setError('');
 
         // Client-side validation
         if (password !== confirmPassword) {
+            console.log('frontend / Register / handleSubmit / Validation failed: passwords dont match');
             setError('Passwords do not match');
             return;
         }
 
         if (password.length < 8) {
+            console.log('frontend / Register / handleSubmit / Validation failed: password too short');
             setError('Password must be at least 8 characters long');
             return;
         }
 
         setIsLoading(true);
+        console.log('frontend / Register / handleSubmit / Validation passed, calling register()');
 
         try {
-            // TODO: Replace with real registration API call
-            const success = await register(name, email, password);
-            if (success) {
+            const result = await register(name, email, password);
+            console.log('frontend / Register / handleSubmit / Register result:', result);
+
+            if (result.success) {
+                console.log('frontend / Register / handleSubmit / Success, navigating to /dashboard');
                 navigate('/dashboard');
             } else {
-                setError('Registration failed. Please try again.');
+                console.log('frontend / Register / handleSubmit / Failed:', result.message);
+                setError(result.message || 'Registration failed. Please try again.');
             }
         } catch (err) {
+            console.error('frontend / Register / handleSubmit / Error:', err);
             setError('An error occurred. Please try again.');
-            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -113,9 +122,6 @@ const Register = () => {
                         {isLoading ? 'Creating account...' : 'Create Account'}
                     </button>
 
-                    <div className="auth-helper-text">
-                        <p>Note: This is a mock registration. No data is persisted.</p>
-                    </div>
                 </form>
 
                 <div className="auth-footer">

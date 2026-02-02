@@ -7,6 +7,7 @@ import './Auth.css';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
@@ -14,19 +15,26 @@ const Login = () => {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        console.log('frontend / Login / handleSubmit / Form submitted');
+        console.log('frontend / Login / handleSubmit / Email:', email);
         setError('');
         setIsLoading(true);
 
         try {
-            const success = await login(email, password);
-            if (success) {
+            console.log('frontend / Login / handleSubmit / Calling login()');
+            const result = await login(email, password);
+            console.log('frontend / Login / handleSubmit / Login result:', result);
+
+            if (result.success) {
+                console.log('frontend / Login / handleSubmit / Success, navigating to /dashboard');
                 navigate('/dashboard');
             } else {
-                setError('Invalid email or password');
+                console.log('frontend / Login / handleSubmit / Failed:', result.message);
+                setError(result.message || 'Invalid email or password');
             }
         } catch (err) {
+            console.error('frontend / Login / handleSubmit / Error:', err);
             setError('An error occurred. Please try again.');
-            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -59,14 +67,24 @@ const Login = () => {
 
                     <div className="form-group">
                         <label htmlFor="password">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter your password"
-                            required
-                        />
+                        <div className="password-input-wrapper">
+                            <input
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Enter your password"
+                                required
+                            />
+                            <button
+                                type="button"
+                                className="password-toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showPassword ? '🙈' : '👁️'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="form-footer">
@@ -79,9 +97,6 @@ const Login = () => {
                         {isLoading ? 'Signing in...' : 'Sign In'}
                     </button>
 
-                    <div className="auth-helper-text">
-                        <p>Demo credentials: john@example.com / password123</p>
-                    </div>
                 </form>
 
                 <div className="auth-footer">
