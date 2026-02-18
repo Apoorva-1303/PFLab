@@ -5,12 +5,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/app
       - /app/node_modules
-    depends_on:
-      db:
-        condition: service_healthy
+    networks:
+      - pflab-network
 
   frontend:
     build:
@@ -21,24 +22,9 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    networks:
+      - pflab-network
 
-  db:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: pass
-      MYSQL_DATABASE: pflab
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: pass1
-    volumes:
-      - mysql_data:/var/lib/mysql
-    ports:
-      - "3307:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      timeout: 5s
-      retries: 10
-
-volumes:
-  mysql_data:
-
-    
+networks:
+  pflab-network:
+    external: true

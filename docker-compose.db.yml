@@ -1,0 +1,22 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: pflab-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: pass
+      MONGO_INITDB_DATABASE: pflab
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - pflab-network
+
+volumes:
+  mongo_data:
+
+
+networks:
+  pflab-network:
+    external: true
