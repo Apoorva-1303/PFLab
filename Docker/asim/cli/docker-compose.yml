@@ -1,0 +1,31 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: payment-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: payment_db
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  cli:
+    build:
+      context: .
+      dockerfile: cli.dockerfile
+    container_name: cli
+    stdin_open: true
+    tty: true
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
