@@ -24,12 +24,18 @@ docker compose run --rm cli
 ```
 
 This will:
+
 1. Pull the MySQL 8.0 image (first time only)
 2. Build the Java CLI image
 3. Start MySQL and wait until it's healthy
 4. Launch the interactive payment app
 
 ## Other Commands
+
+```
+# run like 
+java -cp .:mysql-connector-j-8.2.0.jar App
+```
 
 ```bash
 # Start MySQL in background
