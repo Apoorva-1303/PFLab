@@ -32,8 +32,8 @@ This will:
 
 ## Other Commands
 
-```
-# run like 
+```bash
+# run like
 java -cp .:mysql-connector-j-8.2.0.jar App
 ```
 
