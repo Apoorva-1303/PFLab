@@ -1,0 +1,66 @@
+services:
+
+  mysql:
+    image: mysql:8.4
+    container_name: pflab-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pflab
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - pflab-sql-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-sql:
+    build:
+      context: ./backend-sql
+      dockerfile: Dockerfile
+    container_name: pflab-backend-sql
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend-sql/.env
+    environment:
+      MYSQL_HOST: mysql
+    volumes:
+      - ./backend-sql:/app
+      - /app/node_modules
+      - uploads_data:/app/uploads
+    networks:
+      - pflab-sql-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pflab-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - pflab-sql-network
+
+volumes:
+  mysql_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+networks:
+  pflab-sql-network:
+    driver: bridge
